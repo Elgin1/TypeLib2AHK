@@ -19,7 +19,7 @@ The resulting code is structured as follows (all examples refer to the UIAutomat
 * Header: Information about the type library.
 * CoClasses: The code in this section allows to instantiate the underlying COM interfaces. Example: UIA:=CUIAutomation()
 * Alias type definitions: For information only as type definitions are usually not relevant in AHK.
-* Constants (enumerations and modules): They can be used directly (Example: myTreeScope:=UIAutomationClientTLConst.TreeScope_Ancestors) or the wrapper class can be instantiated as needed. Reverse lookup of a constant name is also possible (Example ValueName:=UIAutomationClientTLConst.UIA_ControlTypeIds[Value])
+* Constants (enumerations and modules): They can be used directly (Example: myTreeScope:=UIAutomationClientTLConst.TreeScope_Ancestors) or the wrapper class can be instantiated as needed. Reverse lookup of a constant name is also possible (Example ValueName:=UIAutomationClientTLConst.UIA_ControlTypeIds(Value))
 * Structures (records and unions): The structures are wrapped as classes for transparent use in AHK scripts (see Example code below). Wrapped structures can be used directly as parameters in function calls or wrapped interfaces. 
 * Interfaces: The interfaces are wrapped as classes for transparent use in AHK scripts (see Example code below).
 * Dispatch interfaces: Dispatch interfaces are handled natively by AHK. Their contents are included for information only.
