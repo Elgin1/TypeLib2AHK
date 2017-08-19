@@ -27,9 +27,9 @@ The resulting code is structured as follows (all examples refer to the UIAutomat
 The code may not contain all the above sections, depending on what is defined in the respective type library.
 
 IMPORTANT: 
-1 Before using the created code carefully read the definitions and make sure that it doesn't redefine any Autohotkey functions. As an example: mscorlib.dll overrides Object().
-2 Many basic structures are defined in several type libraries. You may need to edit the created code to avoid doubles.
-3 The converted AutoHotkey code will most likely be different for 32bit and 64bit (most notably: differences in structure offsets and variant handling in DLL-calls), so be sure to use the correct version and take care when manually merging the code for different bit versions.
+* Before using the created code carefully read the definitions and make sure that it doesn't redefine any Autohotkey functions. As an example: mscorlib.dll overrides Object().
+* Many basic structures are defined in several type libraries. You may need to edit the created code to avoid doubles.
+* The converted AutoHotkey code will most likely be different for 32bit and 64bit (most notably: differences in structure offsets and variant handling in DLL-calls), so be sure to use the correct version and take care when manually merging the code for different bit versions.
 
 Occasionally the type libraries make reference to interfaces or structures which are not included in the library. These can usually be found in other type libraries. Many basic structures and interfaces are defined in the type library "mscorlib.dll".
 
