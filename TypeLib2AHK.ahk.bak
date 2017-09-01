@@ -95,7 +95,7 @@ return
 class TypeLib2AHKMain extends ApplicationFramework
 {
 	AppName:="TypeLib2AHK"
-	Ver:="0.9.5.0"
+	Ver:="0.9.0.0"
 	AuthorName:="Elgin"
 	DefUILang:="English"
 	
