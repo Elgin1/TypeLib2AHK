@@ -21,9 +21,9 @@ t.= "`n"
 ; or as shown here as an AHK object which is then converted by the wrapper
 Conditions:=Object()
 ; only collect elements which are not offscreen
-Conditions.Insert(UIA.CreatePropertyCondition(UIAutomationClientTLConst.UIA_IsOffscreenPropertyId, False, Vt_Bool))
+Conditions.Push(UIA.CreatePropertyCondition(UIAutomationClientTLConst.UIA_IsOffscreenPropertyId, False, Vt_Bool))
 ; only collect elements which are controls
-Conditions.Insert(UIA.ControlViewCondition)
+Conditions.Push(UIA.ControlViewCondition)
 ; combine the above conditions with and
 Condition := UIA.CreateAndConditionFromArray(Conditions)
 
