@@ -178,6 +178,7 @@ class TypeLib2AHKMain extends ApplicationFramework
 				cnt++
 			}
 		}
+		this.Settings.CreateIni("OutPutV2",  0)
 		this.STLLV.ModifyCol(1, "AutoHdr")
 		this.STLLV.ModifyCol(2, "AutoHdr")
 		this.STLLV.ModifyCol(3, "AutoHdr")
@@ -185,8 +186,9 @@ class TypeLib2AHKMain extends ApplicationFramework
 		this.STLGui.Add("Button", "View", this.Resources.SelectTypeLibraryDialogButtonView, "", ObjBindMethod(this,"STLSelectButEvent"))
 		this.STLGui.Add("Button", "LoadFromFile", this.Resources.SelectTypeLibraryDialogButtonLoad, "x+m", ObjBindMethod(this,"STLLoadFromFileButEvent"))
 		this.STLGui.Add("Button", "ConvertAll", this.Resources.SelectTypeLibraryDialogButtonConvertAll, "", ObjBindMethod(this,"STLConvertAllButEvent"))
-		this.STLGui.AddSizingInfo("XMin", ["Convert", "View", "LoadFromFile", "ConvertAll"], 1, "D", 0)
-		this.STLGui.AddSizingInfo("YMin", "RegTypeLibs", 1, 200, 0, "*", 0, "M", 0, ["Convert", "View", "LoadFromFile", "ConvertAll"], 0, "C", 0)
+		this.STLGui.Add("CheckBox", "CreateV2", this.Resources.SelectTypeLibraryDialogCheckV2, "Checked" this.Settings.OutPutV2, ObjBindMethod(this,"STLConvertCheckV2"), "CreateV2")
+		this.STLGui.AddSizingInfo("XMin", ["Convert", "View", "LoadFromFile", "ConvertAll", "CreateV2"], 1, "D", 0)
+		this.STLGui.AddSizingInfo("YMin", "RegTypeLibs", 1, 200, 0, "*", 0, "M", 0, ["Convert", "View", "LoadFromFile", "ConvertAll", "CreateV2"], 0, "C", 0)
 		this.STLGui.AddSizingInfo("X", "RegTypeLibs", 1, 100, 0)
 		this.STLGui.Show()
 	}
@@ -246,6 +248,11 @@ class TypeLib2AHKMain extends ApplicationFramework
 	STLClose()
 	{
 		ExitApp
+	}
+	
+	STLConvertCheckV2(CtrlHwnd="", GuiEvent="", EventInfo="", ErrorLvl="")
+	{
+		this.Settings.OutPutV2:=this.STLGui.Submit().CreateV2
 	}
 	
 	STLLoadFromFileButEvent(CtrlHwnd="", GuiEvent="", EventInfo="", ErrorLvl="")
@@ -413,7 +420,7 @@ class TypeLib2AHKMain extends ApplicationFramework
 	{
 		this.TLInfo:=TypeLibToHeadingsObj(this.TypeLib)
 		bit:=A_PtrSize*8
-		FileSelectFile, FileName, S 18, % this.Settings.OutPutFolder "\" this.TLInfo._TypeLibraryInfo.Name "_" this.TLInfo._TypeLibraryInfo.wMajorVerNum "_" this.TLInfo._TypeLibraryInfo.wMinorVerNum "_" bit "bit.ahk"
+		FileSelectFile, FileName, S 18, % this.Settings.OutPutFolder "\" this.TLInfo._TypeLibraryInfo.Name "_" this.TLInfo._TypeLibraryInfo.wMajorVerNum "_" this.TLInfo._TypeLibraryInfo.wMinorVerNum "_" bit "bit.ahk" (this.Settings.OutPutV2 ? "2":"")
 		If (FileName<>"")
 		{
 			SplitPath, FileName, OutFileName, OutDir
@@ -443,7 +450,7 @@ class TypeLib2AHKMain extends ApplicationFramework
 	{
 		this.TLInfo:=TypeLibToHeadingsObj(this.TypeLib)
 		bit:=A_PtrSize*8
-		FileName:=this.Settings.OutPutFolder "\" this.TLInfo._TypeLibraryInfo.Name "_" this.TLInfo._TypeLibraryInfo.wMajorVerNum "_" this.TLInfo._TypeLibraryInfo.wMinorVerNum "_" bit "bit.ahk"
+		FileName:=this.Settings.OutPutFolder "\" this.TLInfo._TypeLibraryInfo.Name "_" this.TLInfo._TypeLibraryInfo.wMajorVerNum "_" this.TLInfo._TypeLibraryInfo.wMinorVerNum "_" bit "bit.ahk" (this.Settings.OutPutV2 ? "2":"")
 		If (FileExist(FileName))
 			return
 		If (FileName<>"")
@@ -479,7 +486,7 @@ class TypeLib2AHKMain extends ApplicationFramework
 		  s.=", " SubStr(key, 9)
 		t.=Format(this.Resources.IntroComment2, this.TLInfo._TypeLibraryInfo.guid, this.TLInfo._TypeLibraryInfo.lcid,this.TLInfo._TypeLibraryInfo.HelpFile, this.TLInfo._TypeLibraryInfo.HelpContext, SubStr(SYSKIND(this.TLInfo._TypeLibraryInfo.SysKind),5), SubStr(s, 3))
 		t.=this.Resources.EndComment
-		return, t
+		return t
 	}
 	
 	MakeCoClass()
@@ -526,19 +533,22 @@ class TypeLib2AHKMain extends ApplicationFramework
 			t.=this.Resources.EndBlockComment
 			If (DefName<>"")
 			{
-				t.=TI.GetDocumentation(-1).Name "()`r`n{`r`n	try`r`n	{`r`n		If impl:=ComObjCreate(""" Attr.guid ""","""DefGUID """)`r`n"
+				t.=TI.GetDocumentation(-1).Name "()`r`n{`r`n	try`r`n	{`r`n		If (impl:=ComObjCreate(""" Attr.guid ""","""DefGUID """))`r`n"
 				If (DefTypeKind=3) ; Interface
 					t.="			return new " DefName "(impl)`r`n"
 				else
 					t.="			return impl`r`n"
 				t.="		throw """ DefName this.Resources.CodeComNotInitialized
 				t.="	}`r`n	catch e`r`n"
-				t.="		MsgBox, 262160, " DefName " Error, % IsObject(e)?""" DefName this.Resources.CodeComNotRegistered ":e.Message`r`n"
+				If (this.Settings.OutPutV2)
+					t.="		MsgBox, 262160, " DefName " Error, IsObject(e)?""" DefName this.Resources.CodeComNotRegistered ":e.Message`r`n"
+				else
+					t.="		MsgBox, 262160, " DefName " Error, % IsObject(e)?""" DefName this.Resources.CodeComNotRegistered ":e.Message`r`n"
 				t.="}`r`n`r`n"						
 			}					
 		}
 		Progress, Off
-		return, t
+		return t
 	}
 	
 	MakeConst()
@@ -689,7 +699,7 @@ class TypeLib2AHKMain extends ApplicationFramework
 		}
 		Progress, Off
 		t.="}`r`n`r`n"
-		return, t
+		return t
 	}
 	
 	MakeInterface()
@@ -742,7 +752,11 @@ class TypeLib2AHKMain extends ApplicationFramework
 			{
 				t.="`r`n{ `r`n	" this.Resources.CodeGeneric
 				t.="	static __IID := """ Attr.guid """`r`n" "`r`n"
-				t.="	__New(p="""", flag=1)`r`n	{`r`n		ObjInsert(this, ""__Type"", """ TI.GetDocumentation(-1).Name """)`r`n			,ObjInsert(this, ""__Value"", p)`r`n			,ObjInsert(this, ""__Flag"", flag)`r`n	}`r`n`r`n	__Delete()`r`n	{`r`n		this.__Flag? ObjRelease(this.__Value):`r`n	}`r`n`r`n	__Vt(n)`r`n	{`r`n		return NumGet(NumGet(this.__Value+0, ""Ptr"")+n*A_PtrSize,""Ptr"")`r`n	}`r`n"
+				If (this.Settings.OutPutV2)
+					t.="	__New(p:="""", flag:=1)`r`n	{`r`n		this.__Type:=""" TI.GetDocumentation(-1).Name """`r`n		this.__Value:=p`r`n		this.__Flag:=flag`r`n	}`r`n`r`n	__Delete()`r`n	{`r`n		this.__Flag? ObjRelease(this.__Value):0`r`n	}`r`n`r`n	__Vt(n)`r`n	{`r`n		return NumGet(NumGet(this.__Value+0, ""Ptr"")+n*A_PtrSize,""Ptr"")`r`n	}`r`n"
+				else
+					t.="	__New(p="""", flag=1)`r`n	{`r`n		this.__Type:=""" TI.GetDocumentation(-1).Name """`r`n		this.__Value:=p`r`n		this.__Flag:=flag`r`n	}`r`n`r`n	__Delete()`r`n	{`r`n		this.__Flag? ObjRelease(this.__Value):0`r`n	}`r`n`r`n	__Vt(n)`r`n	{`r`n		return NumGet(NumGet(this.__Value+0, ""Ptr"")+n*A_PtrSize,""Ptr"")`r`n	}`r`n"
+					;~ t.="	__New(p="""", flag=1)`r`n	{`r`n		ObjInsert(this, ""__Type"", """ TI.GetDocumentation(-1).Name """)`r`n			,ObjInsert(this, ""__Value"", p)`r`n			,ObjInsert(this, ""__Flag"", flag)`r`n	}`r`n`r`n	__Delete()`r`n	{`r`n		this.__Flag? ObjRelease(this.__Value):0`r`n	}`r`n`r`n	__Vt(n)`r`n	{`r`n		return NumGet(NumGet(this.__Value+0, ""Ptr"")+n*A_PtrSize,""Ptr"")`r`n	}`r`n"
 			}
 			t.="`r`n"
 			If (Attr.cVars)
@@ -830,11 +844,19 @@ class TypeLib2AHKMain extends ApplicationFramework
 							t.=ParamNames[A_Index+1]
 							If (param.paramdesc.wParamFlags & 0x20) ; Hasdefault
 							{
-								t.=" = " param.paramdesc.pPARAMDescEx.varDefaultValue
+								If (this.Settings.OutPutV2)
+									t.=" := " param.paramdesc.pPARAMDescEx.varDefaultValue
+								else
+									t.=" = " param.paramdesc.pPARAMDescEx.varDefaultValue
 							}
 							else
 							If (param.paramdesc.wParamFlags & 0x10) ; PARAMFLAG_FOPT
-								t.="=0"
+							{
+								If (this.Settings.OutPutV2)
+									t.=":=0"
+								else
+									t.="=0"
+							}
 							If (param.tdesc.vt=12) ; VT_Variant
 								t.=", " ParamNames[A_Index+1] "VariantType"							
 						}
@@ -873,7 +895,7 @@ class TypeLib2AHKMain extends ApplicationFramework
 								t.="			ref" ParamNames[A_Index+1] ":=" ParamNames[A_Index+1] "`r`n"
 								t.="		else`r`n"
 								t.="		{`r`n"
-								t.="			ref" ParamNames[A_Index+1] ":=ComObj(0x2003, DllCall(""oleaut32\SafeArrayCreateVector"", ""UInt"", 13, ""UInt"", 0, ""UInt"", " ParamNames[A_Index+1] ".MaxIndex()),1)`r`n"
+								t.="			ref" ParamNames[A_Index+1] ":=ComObject(0x2003, DllCall(""oleaut32\SafeArrayCreateVector"", ""UInt"", 13, ""UInt"", 0, ""UInt"", " ParamNames[A_Index+1] ".MaxIndex()),1)`r`n"
 								t.="			For ind, val in " ParamNames[A_Index+1] "`r`n"
 								t.="				ref" ParamNames[A_Index+1] "[A_Index-1]:= val.__Value, ObjAddRef(val.__Value)`r`n"
 								t.="		}`r`n"
@@ -939,11 +961,11 @@ class TypeLib2AHKMain extends ApplicationFramework
 							t.="		If (res<0 and res<>"""")`r`n			Throw Exception(""COM HResult: 0x"" Format(""{:x}"", res & 0xFFFFFFFF) "" from " Name " in " TI.GetDocumentation(-1).Name """)`r`n"
 							for index, str in GetTypeObjPostProcessing(RetValTypeObj)
 								t.="		" str "`r`n"
-							t.="		return, out`r`n"
+							t.="		return out`r`n"
 						}
 						else
 						{
-							t.="		return, res`r`n"
+							t.="		return res`r`n"
 						}							
 						t.="	}`r`n`r`n"
 					}
@@ -1013,18 +1035,18 @@ class TypeLib2AHKMain extends ApplicationFramework
 						t.="			{`r`n"
 						for index, str in GetTypeObjPostProcessing(PropObj.GetTypeObj)
 							t.="				" str "`r`n"
-						t.="				return, out`r`n"
+						t.="				return out`r`n"
 						t.="			}`r`n		}`r`n"
 					}
 					If (PropObj.Put<>0)
 					{
 						t.="		set {`r`n			If !DllCall(this.__Vt(" PropObj.Put "), ""Ptr"", this.__Value, """ GetAHKDllCallTypeFromVarObj(PropObj.PutTypeObj) """, value)`r`n"
-						t.="				return, value`r`n		}`r`n"
+						t.="				return value`r`n		}`r`n"
 					}
 					If (PropObj.PutRef<>0)
 					{
 						t.="		set {`r`n			If !DllCall(this.__Vt(" PropObj.PutRef "), ""Ptr"", this.__Value, """ GetAHKDllCallTypeFromVarObj(PropObj.PutRefTypeObj) """, value)`r`n"
-						t.="				return, value`r`n		}`r`n"
+						t.="				return value`r`n		}`r`n"
 					}
 					t.="	}`r`n"
 				}
@@ -1033,7 +1055,7 @@ class TypeLib2AHKMain extends ApplicationFramework
 			t.="}`r`n`r`n"
 		}
 		Progress, Off
-		return, t
+		return t
 	}
 	
 	MakeRecord(Type)	; Type "RECORD", "UNION"
@@ -1054,14 +1076,17 @@ class TypeLib2AHKMain extends ApplicationFramework
 			t.=this.Resources.EndComment
 			If (Attr.cVars)
 			{
-				t.="class " TI.GetDocumentation(-1).Name "`r`n{`r`n	__New(byref p=""empty"")`r`n	{`r`n		If (p=""empty"")`r`n		{`r`n			VarSetCapacity(p,this.__SizeOf(),0)`r`n		}`r`n		ObjInsert(this, ""__Value"", &p)`r`n	}`r`n`r`n	__Get(VarName)`r`n	{`r`n		If (VarName=""__Value"")`r`n			return, this.__Value`r`n"
+				If (this.Settings.OutPutV2)
+					t.="class " TI.GetDocumentation(-1).Name "`r`n{`r`n	__New(byref p:=""empty"")`r`n	{`r`n		If (p=""empty"")`r`n		{`r`n			VarSetCapacity(p,this.__SizeOf(),0)`r`n		}`r`n		ObjRawSet(this, ""__Value"", &p)`r`n	}`r`n`r`n	__Get(VarName)`r`n	{`r`n		If (VarName=""__Value"")`r`n			return this__Value`r`n"
+				else
+					t.="class " TI.GetDocumentation(-1).Name "`r`n{`r`n	__New(byref p=""empty"")`r`n	{`r`n		If (p=""empty"")`r`n		{`r`n			VarSetCapacity(p,this.__SizeOf(),0)`r`n		}`r`n		ObjInsert(this, ""__Value"", &p)`r`n	}`r`n`r`n	__Get(VarName)`r`n	{`r`n		If (VarName=""__Value"")`r`n			return this.__Value`r`n"
 				Loop, % Attr.cVars
 				{
 					VarDescVar:=TI.GetVarDesc(A_Index-1)
 					Doc:=TI.GetDocumentation(VarDescVar.memid)
 					If (VarDescVar.varkind=0) ; PerInstance
 					{
-						t.="		If (VarName=""" Doc.Name """)`r`n			return, NumGet(this.__Value+" VarDescVar.lpvarvalue ", 0, """ VT2AHK(VarDescVar.elemdescVar.tdesc.vt) """) `; " this.Resources.Type GetVarStr(VarDescVar.elemdescVar, TI)
+						t.="		If (VarName=""" Doc.Name """)`r`n			return NumGet(this.__Value+" VarDescVar.lpvarvalue ", 0, """ VT2AHK(VarDescVar.elemdescVar.tdesc.vt) """) `; " this.Resources.Type GetVarStr(VarDescVar.elemdescVar, TI)
 						If (Doc.DocString<>"")
 							t.=": " Doc.DocString
 						t.="`r`n"
@@ -1083,12 +1108,12 @@ class TypeLib2AHKMain extends ApplicationFramework
 					Size:=VarDescVar.lpvarvalue+VTSize(VarDescVar.elemdescVar.tdesc.vt)
 					TI.ReleaseVarDesc(VarDescVar.__Ptr)
 				}
-				t.="		return, Value`r`n	}`r`n`r`n	__SizeOf()`r`n	{`r`n		return, " Size "`r`n	}`r`n}`r`n`r`n"
+				t.="		return Value`r`n	}`r`n`r`n	__SizeOf()`r`n	{`r`n		return " Size "`r`n	}`r`n}`r`n`r`n"
 			}
 			TI.ReleaseTypeAttr(Attr.__Ptr)
 		}
 		Progress, Off
-		return, t
+		return t
 	}
 	
 	MakeGeneric(Type)	; outputs the type library information as formatted comments
@@ -1231,6 +1256,6 @@ class TypeLib2AHKMain extends ApplicationFramework
 			t.=this.Resources.EndBlockComment
 		}
 		Progress, Off
-		return, t
+		return t
 	}
 }
