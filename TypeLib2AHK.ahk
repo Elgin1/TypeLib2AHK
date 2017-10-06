@@ -709,9 +709,186 @@ class TypeLib2AHKMain extends ApplicationFramework
 		{
 			Progress, % (Index)/this.TLInfo.INTERFACE.MaxIndex()*100, % Index this.Resources.Of this.TLInfo.INTERFACE.MaxIndex(), % this.Resources.ProgressWindowText "Interface", % this.Resources.ProgressWindowCaption ": " this.TLInfo._TypeLibraryInfo.Name
 			TI:=this.TypeLib.GetTypeInfo(obj.Index)
+			Attr:=TI.GetTypeAttr()
+			If (attr.wTypeFlags && 0x100)		; create wrapper for interface implemented in the script
+			{
+				If (Attr.cFuncs)
+				{
+					funcs:=Object()
+					Loop, % Attr.cFuncs
+					{
+						FuncIndex:=A_Index-1
+						FuncDescVar:=TI.GetFuncDesc(FuncIndex)
+						Doc:=TI.GetDocumentation(FuncDescVar.memid)
+						ParamNames:=TI.GetNames(FuncDescVar.memid,FuncDescVar.cParams+1)
+						funcs[FuncDescVar.oVft//A_PtrSize]:=Object()
+						If (FuncDescVar.invkind=1)	; Is a function not a property
+						{
+							funcs[FuncDescVar.oVft//A_PtrSize].Name:=Doc.Name
+							funcs[FuncDescVar.oVft//A_PtrSize].Params:=Object()
+							Loop, % FuncDescVar.cParams
+							{
+								ttemp:=""
+								param:=new ELEMDESC(FuncDescVar.lprgelemdescParam+(A_Index-1)*ELEMDESC.SizeOf())
+								If (A_Index>1)
+									ttemp.=", "
+								If (param.paramdesc.wParamFlags & 0x2)	; PARAMFLAG_FOUT
+									ttemp.="byref "
+								ttemp.=ParamNames[A_Index+1]
+								If (param.paramdesc.wParamFlags & 0x20) ; Hasdefault
+								{
+									If (this.Settings.OutPutV2)
+										ttemp.=" := " param.paramdesc.pPARAMDescEx.varDefaultValue
+									else
+										ttemp.=" = " param.paramdesc.pPARAMDescEx.varDefaultValue
+								}
+								else
+								If (param.paramdesc.wParamFlags & 0x10) ; PARAMFLAG_FOPT
+								{
+									If (this.Settings.OutPutV2)
+										ttemp.=":=0"
+									else
+										ttemp.="=0"
+								}
+								funcs[FuncDescVar.oVft//A_PtrSize].Params[A_Index]:=ttemp
+							}
+						}
+						else	; it's a property
+						{
+							funcs[FuncDescVar.oVft//A_PtrSize].Params:=Object()
+							vtype:=""
+							param:=new ELEMDESC(FuncDescVar.lprgelemdescParam)
+							VType.=GetVarStr(param, TI)
+							VObj:=GetTypeObj(param, TI)
+							VName:=ParamNames[2]
+							If (FuncDescVar.invkind=2)
+							{
+								funcs[FuncDescVar.oVft//A_PtrSize].Name:=Doc.Name "_PropertyGet"
+								funcs[FuncDescVar.oVft//A_PtrSize].Type:=VType
+								funcs[FuncDescVar.oVft//A_PtrSize].TypeObj:=VObj
+							}
+							If (FuncDescVar.invkind=3)
+							{
+								funcs[FuncDescVar.oVft//A_PtrSize].Name:=Doc.Name "_PropertyPut"
+								funcs[FuncDescVar.oVft//A_PtrSize].Params[1]:=VName
+								funcs[FuncDescVar.oVft//A_PtrSize].Type:=VType
+								funcs[FuncDescVar.oVft//A_PtrSize].TypeObj:=VObj
+							}
+							If (FuncDescVar.invkind=4)
+							{
+								funcs[FuncDescVar.oVft//A_PtrSize].Name:=Doc.Name "_PropertyPutRef"
+								funcs[FuncDescVar.oVft//A_PtrSize].Params[1]:="byref " VName
+								funcs[FuncDescVar.oVft//A_PtrSize].Type:=VType
+								funcs[FuncDescVar.oVft//A_PtrSize].TypeObj:=VObj
+							}
+						}
+					}
+					t.=this.Resources.StartComment
+					t.="; " TI.GetDocumentation(-1).Name "Impl`r`n`r`n"
+					t.="; This class provides a basic implementation wrapper for " TI.GetDocumentation(-1).Name ".`r`n"
+					t.="; WARNING: This currently only works in 64bit!`r`n"
+					t.="; To use you need to provide an implementation for the exported functions in your script.`r`n"
+					t.="; Example:`r`n"
+					t.=";~ #Include ComImplementationBase.ahk`r`n"
+					t.=";~ class YourClassName extends " TI.GetDocumentation(-1).Name "Impl`r`n"
+					t.=";~ {`r`n"
+					Loop, % funcs.MaxIndex()-funcs.MinIndex()+1
+					{
+						If (A_Index>1)
+							t.="`r`n"
+						t.=";~	" funcs[A_Index+funcs.MinIndex()-1].Name "(" 
+						for ind, key in funcs[A_Index+funcs.MinIndex()-1].Params
+						{
+							t.=key
+						}
+						t.=")`r`n;~	{`r`n;~		`; your code`r`n;~	}`r`n"
+					}
+					t.=";~ }`r`n"
+					t.=";~`r`n"
+					t.="; " this.Resources.GUID Attr.guid "`r`n"
+					t.=this.Resources.EndComment
+					t.="`r`n"			
+					t.="class " TI.GetDocumentation(-1).Name "Impl extends IUnknownImpl`r`n{`r`n" 
+					t.="	ComFunctions := [""QueryInterface"", ""AddRef"", ""Release"""
+					Loop, % funcs.MaxIndex()-funcs.MinIndex()+1
+					{
+						t.=", """ funcs[A_Index+funcs.MinIndex()-1].Name """"
+					}
+					t.="]`r`n`r`n"
+					t.="	__New()`r`n	{`r`n		`; Add the GUID of the interface this class is implementing`r`n		this.ImplementsInterfaces.InsertAt(1, """ Attr.guid """)`r`n		base.__New()`r`n	}`r`n`r`n"
+					Loop, % Attr.cFuncs
+					{
+						FuncIndex:=A_Index-1
+						FuncDescVar:=TI.GetFuncDesc(FuncIndex)
+						Doc:=TI.GetDocumentation(FuncDescVar.memid)
+						Name:=Doc.Name
+						If (A_Index>1)
+							t.="`r`n"
+						If (FuncDescVar.invkind=1)	; Is a function not a property
+						{
+							ReturnIsHRESULT:=0
+							HasRetValParam:=0
+							RetValTypeObj:=
+							RetValName:=""
+							t.="	" "; " this.Resources.VTablePositon " " FuncDescVar.oVft//A_PtrSize ": "
+							t.=INVOKEKIND(FuncDescVar.invkind) " "
+							result:=FuncDescVar.elemdescFunc.tdesc.vt
+							If (result=25) ; VT_HRESULT
+							ReturnIsHRESULT:=1
+							t.=VARENUM(result) " "							
+							t.=Name "("
+							Loop, % FuncDescVar.cParams
+							{
+								If (A_Index>1)
+									t.=", "
+								param:=new ELEMDESC(FuncDescVar.lprgelemdescParam+(A_Index-1)*ELEMDESC.SizeOf())
+								vstr:=GetVarStr(param, TI)
+								If (param.paramdesc.wParamFlags & 0x8)
+								{
+									HasRetValParam:=1								
+									RetValName:=ParamNames[A_Index+1]
+									RetValTypeObj:=GetTypeObj(param, TI)
+								}
+								for index, key in PARAMFLAG(param.paramdesc.wParamFlags)
+								{
+									t.="[" SubStr(key, 11) "] "
+								}
+								If (InStr(vstr,"VT_")=1)
+									t.=Substr(vstr, 4) ": "
+								else
+									t.=vstr ": "
+								t.=ParamNames[A_Index+1]
+								If (param.paramdesc.wParamFlags & 0x20) ; Hasdefault
+								{
+									t.=" = " param.paramdesc.pPARAMDescEx.varDefaultValue
+								}
+							}
+							t.=")`r`n"
+							If (Doc.DocString<>"")
+								t.="	`; " Doc.DocString "`r`n"
+							
+							ttemp:=Name "("
+							for ind, key in funcs[A_Index+funcs.MinIndex()-1].Params
+							{
+								ttemp.=key
+							}
+							ttemp.=")`r`n"
+							t.="	_" ttemp "	{`r`n"
+							t.="		if (!IsObject(this))`r`n			return ComObjImpl.ObjMap[this]." ttemp "`r`n		this." ttemp
+							t.="	}`r`n"
+						}
+						else	; it's a property
+						{
+							t.="	_" funcs[A_Index+funcs.MinIndex()-1].Name "(" funcs[A_Index+funcs.MinIndex()-1].Params[1] ")	`; Type: " funcs[FuncDescVar.oVft//A_PtrSize].Type:=VType " ObjType: " funcs[FuncDescVar.oVft//A_PtrSize].TypeObj:=VObj "`r`n	{`r`n		if (!IsObject(this))`r`n			return ComObjImpl.ObjMap[this]." funcs[A_Index+funcs.MinIndex()-1].Name "(" funcs[A_Index+funcs.MinIndex()-1].Params[1]  ")`r`n		return this." funcs[A_Index+funcs.MinIndex()-1].Name "(" funcs[A_Index+funcs.MinIndex()-1].Params[1] ")`r`n"		
+							t.="	}`r`n`r`n"
+						}		
+					}
+					t.="}`r`n`r`n"
+				}
+			}
+			; create wrapper for externally implemented interface
 			t.=this.Resources.StartComment
 			t.="; " TI.GetDocumentation(-1).Name	"`r`n"
-			Attr:=TI.GetTypeAttr()
 			t.="; " this.Resources.GUID Attr.guid "`r`n"
 			t.=this.Resources.EndComment
 			t.="`r`n"			
