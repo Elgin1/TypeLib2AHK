@@ -712,7 +712,22 @@ class TypeLib2AHKMain extends ApplicationFramework
 			Attr:=TI.GetTypeAttr()
 			If (attr.wTypeFlags && 0x100)		; create wrapper for interface implemented in the script
 			{
-				If (Attr.cFuncs)
+				extends:=""
+				If (Attr.cImplTypes)
+				{
+					If (Attr.typekind=3 or Attr.typekind=4 or Attr.typekind=5)	; TKIND_INTERFACE, TKIND_DISPATCH, TKIND_COCLASS
+					{
+						Loop, % Attr.cImplTypes
+						{
+							Name:=TI.GetRefTypeOfImplType(A_Index-1).GetDocumentation(-1).Name
+							If (Name<>"IUnknown")
+								extends.=Name
+						}
+					}
+				}
+				If (extends="")
+					extends:="IUnknown"
+				If (extends="IUnknown" and Attr.cFuncs)
 				{
 					funcs:=Object()
 					Loop, % Attr.cFuncs
@@ -730,10 +745,19 @@ class TypeLib2AHKMain extends ApplicationFramework
 							{
 								ttemp:=""
 								param:=new ELEMDESC(FuncDescVar.lprgelemdescParam+(A_Index-1)*ELEMDESC.SizeOf())
-								If (A_Index>1)
-									ttemp.=", "
-								If (param.paramdesc.wParamFlags & 0x2)	; PARAMFLAG_FOUT
-									ttemp.="byref "
+								ttemp.=", "
+								If (param.paramdesc.wParamFlags & 0x3 = 3)	; PARAMFLAG_FIN + PARAMFLAG_FOUT
+								{
+									tp:=GetTypeObj(param, TI)
+									If (tp[1].Type<>26)
+										ttemp.="byref "
+									else
+									{
+										tpp:=tp[2].Type
+										If tpp in 2,3,4,5,6,7,10,11,14,16,17,18,19,20,21,22,23,25,37,38
+										ttemp.="FINFOUT " tp[2].Type " "
+									}
+								}
 								ttemp.=ParamNames[A_Index+1]
 								If (param.paramdesc.wParamFlags & 0x20) ; Hasdefault
 								{
@@ -777,7 +801,7 @@ class TypeLib2AHKMain extends ApplicationFramework
 							If (FuncDescVar.invkind=4)
 							{
 								funcs[FuncDescVar.oVft//A_PtrSize].Name:=Doc.Name "_PropertyPutRef"
-								funcs[FuncDescVar.oVft//A_PtrSize].Params[1]:="byref " VName
+								funcs[FuncDescVar.oVft//A_PtrSize].Params[1]:=", byref " VName
 								funcs[FuncDescVar.oVft//A_PtrSize].Type:=VType
 								funcs[FuncDescVar.oVft//A_PtrSize].TypeObj:=VObj
 							}
@@ -796,7 +820,7 @@ class TypeLib2AHKMain extends ApplicationFramework
 					{
 						If (A_Index>1)
 							t.="`r`n"
-						t.=";~	" funcs[A_Index+funcs.MinIndex()-1].Name "(" 
+						t.=";~	" funcs[A_Index+funcs.MinIndex()-1].Name "(pInterface" 
 						for ind, key in funcs[A_Index+funcs.MinIndex()-1].Params
 						{
 							t.=key
@@ -808,7 +832,7 @@ class TypeLib2AHKMain extends ApplicationFramework
 					t.="; " this.Resources.GUID Attr.guid "`r`n"
 					t.=this.Resources.EndComment
 					t.="`r`n"			
-					t.="class " TI.GetDocumentation(-1).Name "Impl extends IUnknownImpl`r`n{`r`n" 
+					t.="class " TI.GetDocumentation(-1).Name "Impl extends IUnknownImpl`r`n{" 
 					t.="	ComFunctions := [""QueryInterface"", ""AddRef"", ""Release"""
 					Loop, % funcs.MaxIndex()-funcs.MinIndex()+1
 					{
@@ -822,19 +846,14 @@ class TypeLib2AHKMain extends ApplicationFramework
 						FuncDescVar:=TI.GetFuncDesc(FuncIndex)
 						Doc:=TI.GetDocumentation(FuncDescVar.memid)
 						Name:=Doc.Name
+						ParamNames:=TI.GetNames(FuncDescVar.memid,FuncDescVar.cParams+1)
 						If (A_Index>1)
 							t.="`r`n"
 						If (FuncDescVar.invkind=1)	; Is a function not a property
 						{
-							ReturnIsHRESULT:=0
-							HasRetValParam:=0
-							RetValTypeObj:=
-							RetValName:=""
 							t.="	" "; " this.Resources.VTablePositon " " FuncDescVar.oVft//A_PtrSize ": "
 							t.=INVOKEKIND(FuncDescVar.invkind) " "
 							result:=FuncDescVar.elemdescFunc.tdesc.vt
-							If (result=25) ; VT_HRESULT
-							ReturnIsHRESULT:=1
 							t.=VARENUM(result) " "							
 							t.=Name "("
 							Loop, % FuncDescVar.cParams
@@ -843,12 +862,6 @@ class TypeLib2AHKMain extends ApplicationFramework
 									t.=", "
 								param:=new ELEMDESC(FuncDescVar.lprgelemdescParam+(A_Index-1)*ELEMDESC.SizeOf())
 								vstr:=GetVarStr(param, TI)
-								If (param.paramdesc.wParamFlags & 0x8)
-								{
-									HasRetValParam:=1								
-									RetValName:=ParamNames[A_Index+1]
-									RetValTypeObj:=GetTypeObj(param, TI)
-								}
 								for index, key in PARAMFLAG(param.paramdesc.wParamFlags)
 								{
 									t.="[" SubStr(key, 11) "] "
@@ -867,19 +880,24 @@ class TypeLib2AHKMain extends ApplicationFramework
 							If (Doc.DocString<>"")
 								t.="	`; " Doc.DocString "`r`n"
 							
-							ttemp:=Name "("
+							ttemp:=Name "(pInterface"
+							ttemp2:=Name "(this, pInterface"
+							key2:=""
 							for ind, key in funcs[A_Index+funcs.MinIndex()-1].Params
 							{
 								ttemp.=key
+								ttemp2.=key2
+								key2:=key
 							}
 							ttemp.=")`r`n"
+							ttemp2.=")`r`n"
 							t.="	_" ttemp "	{`r`n"
-							t.="		if (!IsObject(this))`r`n			return ComObjImpl.ObjMap[this]." ttemp "`r`n		this." ttemp
+							t.="		if (!IsObject(this))`r`n			return ComObjImpl.ObjMap[this]._" ttemp2 "`r`n		this." ttemp
 							t.="	}`r`n"
 						}
 						else	; it's a property
 						{
-							t.="	_" funcs[A_Index+funcs.MinIndex()-1].Name "(" funcs[A_Index+funcs.MinIndex()-1].Params[1] ")	`; Type: " funcs[FuncDescVar.oVft//A_PtrSize].Type:=VType " ObjType: " funcs[FuncDescVar.oVft//A_PtrSize].TypeObj:=VObj "`r`n	{`r`n		if (!IsObject(this))`r`n			return ComObjImpl.ObjMap[this]." funcs[A_Index+funcs.MinIndex()-1].Name "(" funcs[A_Index+funcs.MinIndex()-1].Params[1]  ")`r`n		return this." funcs[A_Index+funcs.MinIndex()-1].Name "(" funcs[A_Index+funcs.MinIndex()-1].Params[1] ")`r`n"		
+							t.="	_" funcs[A_Index+funcs.MinIndex()-1].Name "(pInterface" funcs[A_Index+funcs.MinIndex()-1].Params[1] ")	`; Type: " funcs[FuncDescVar.oVft//A_PtrSize].Type:=VType " ObjType: " funcs[FuncDescVar.oVft//A_PtrSize].TypeObj:=VObj "`r`n	{`r`n		if (!IsObject(this))`r`n			return ComObjImpl.ObjMap[this]._" funcs[A_Index+funcs.MinIndex()-1].Name "(this, pInterface)`r`n		return this." funcs[A_Index+funcs.MinIndex()-1].Name "(pInterface" funcs[A_Index+funcs.MinIndex()-1].Params[1] ")`r`n"		
 							t.="	}`r`n`r`n"
 						}		
 					}

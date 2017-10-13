@@ -2653,7 +2653,7 @@ class IUIAutomationTreeWalker
 ;~ #Include ComImplementationBase.ahk
 ;~ class YourClassName extends IUIAutomationEventHandlerImpl
 ;~ {
-;~	HandleAutomationEvent(sender, eventId)
+;~	HandleAutomationEvent(pInterface, sender, eventId)
 ;~	{
 ;~		; your code
 ;~	}
@@ -2664,8 +2664,7 @@ class IUIAutomationTreeWalker
 
 
 class IUIAutomationEventHandlerImpl extends IUnknownImpl
-{
-	ComFunctions := ["QueryInterface", "AddRef", "Release", "HandleAutomationEvent"]
+{	ComFunctions := ["QueryInterface", "AddRef", "Release", "HandleAutomationEvent"]
 
 	__New()
 	{
@@ -2675,12 +2674,12 @@ class IUIAutomationEventHandlerImpl extends IUnknownImpl
 	}
 
 	; VTable Positon 3: INVOKE_FUNC Vt_Hresult HandleAutomationEvent([FIN] IUIAutomationElement*: sender, [FIN] Int: eventId)
-	_HandleAutomationEvent(sender, eventId)
+	_HandleAutomationEvent(pInterface, sender, eventId)
 	{
 		if (!IsObject(this))
-			return ComObjImpl.ObjMap[this].HandleAutomationEvent(sender, eventId)
+			return ComObjImpl.ObjMap[this]._HandleAutomationEvent(this, pInterface, sender)
 
-		this.HandleAutomationEvent(sender, eventId)
+		this.HandleAutomationEvent(pInterface, sender, eventId)
 	}
 }
 
@@ -2738,7 +2737,7 @@ class IUIAutomationEventHandler
 ;~ #Include ComImplementationBase.ahk
 ;~ class YourClassName extends IUIAutomationPropertyChangedEventHandlerImpl
 ;~ {
-;~	HandlePropertyChangedEvent(sender, propertyId, newValue)
+;~	HandlePropertyChangedEvent(pInterface, sender, propertyId, newValue)
 ;~	{
 ;~		; your code
 ;~	}
@@ -2749,8 +2748,7 @@ class IUIAutomationEventHandler
 
 
 class IUIAutomationPropertyChangedEventHandlerImpl extends IUnknownImpl
-{
-	ComFunctions := ["QueryInterface", "AddRef", "Release", "HandlePropertyChangedEvent"]
+{	ComFunctions := ["QueryInterface", "AddRef", "Release", "HandlePropertyChangedEvent"]
 
 	__New()
 	{
@@ -2760,12 +2758,12 @@ class IUIAutomationPropertyChangedEventHandlerImpl extends IUnknownImpl
 	}
 
 	; VTable Positon 3: INVOKE_FUNC Vt_Hresult HandlePropertyChangedEvent([FIN] IUIAutomationElement*: sender, [FIN] Int: propertyId, [FIN] Variant: newValue)
-	_HandlePropertyChangedEvent(sender, propertyId, newValue)
+	_HandlePropertyChangedEvent(pInterface, sender, propertyId, newValue)
 	{
 		if (!IsObject(this))
-			return ComObjImpl.ObjMap[this].HandlePropertyChangedEvent(sender, propertyId, newValue)
+			return ComObjImpl.ObjMap[this]._HandlePropertyChangedEvent(this, pInterface, sender, propertyId)
 
-		this.HandlePropertyChangedEvent(sender, propertyId, newValue)
+		this.HandlePropertyChangedEvent(pInterface, sender, propertyId, newValue)
 	}
 }
 
@@ -2832,7 +2830,7 @@ class IUIAutomationPropertyChangedEventHandler
 ;~ #Include ComImplementationBase.ahk
 ;~ class YourClassName extends IUIAutomationStructureChangedEventHandlerImpl
 ;~ {
-;~	HandleStructureChangedEvent(sender, changeType, runtimeId)
+;~	HandleStructureChangedEvent(pInterface, sender, changeType, runtimeId)
 ;~	{
 ;~		; your code
 ;~	}
@@ -2843,8 +2841,7 @@ class IUIAutomationPropertyChangedEventHandler
 
 
 class IUIAutomationStructureChangedEventHandlerImpl extends IUnknownImpl
-{
-	ComFunctions := ["QueryInterface", "AddRef", "Release", "HandleStructureChangedEvent"]
+{	ComFunctions := ["QueryInterface", "AddRef", "Release", "HandleStructureChangedEvent"]
 
 	__New()
 	{
@@ -2854,12 +2851,12 @@ class IUIAutomationStructureChangedEventHandlerImpl extends IUnknownImpl
 	}
 
 	; VTable Positon 3: INVOKE_FUNC Vt_Hresult HandleStructureChangedEvent([FIN] IUIAutomationElement*: sender, [FIN] StructureChangeType: changeType, [FIN] Safearray: runtimeId)
-	_HandleStructureChangedEvent(sender, changeType, runtimeId)
+	_HandleStructureChangedEvent(pInterface, sender, changeType, runtimeId)
 	{
 		if (!IsObject(this))
-			return ComObjImpl.ObjMap[this].HandleStructureChangedEvent(sender, changeType, runtimeId)
+			return ComObjImpl.ObjMap[this]._HandleStructureChangedEvent(this, pInterface, sender, changeType)
 
-		this.HandleStructureChangedEvent(sender, changeType, runtimeId)
+		this.HandleStructureChangedEvent(pInterface, sender, changeType, runtimeId)
 	}
 }
 
@@ -2925,7 +2922,7 @@ class IUIAutomationStructureChangedEventHandler
 ;~ #Include ComImplementationBase.ahk
 ;~ class YourClassName extends IUIAutomationFocusChangedEventHandlerImpl
 ;~ {
-;~	HandleFocusChangedEvent(sender)
+;~	HandleFocusChangedEvent(pInterface, sender)
 ;~	{
 ;~		; your code
 ;~	}
@@ -2936,8 +2933,7 @@ class IUIAutomationStructureChangedEventHandler
 
 
 class IUIAutomationFocusChangedEventHandlerImpl extends IUnknownImpl
-{
-	ComFunctions := ["QueryInterface", "AddRef", "Release", "HandleFocusChangedEvent"]
+{	ComFunctions := ["QueryInterface", "AddRef", "Release", "HandleFocusChangedEvent"]
 
 	__New()
 	{
@@ -2947,12 +2943,12 @@ class IUIAutomationFocusChangedEventHandlerImpl extends IUnknownImpl
 	}
 
 	; VTable Positon 3: INVOKE_FUNC Vt_Hresult HandleFocusChangedEvent([FIN] IUIAutomationElement*: sender)
-	_HandleFocusChangedEvent(sender)
+	_HandleFocusChangedEvent(pInterface, sender)
 	{
 		if (!IsObject(this))
-			return ComObjImpl.ObjMap[this].HandleFocusChangedEvent(sender)
+			return ComObjImpl.ObjMap[this]._HandleFocusChangedEvent(this, pInterface)
 
-		this.HandleFocusChangedEvent(sender)
+		this.HandleFocusChangedEvent(pInterface, sender)
 	}
 }
 
@@ -3010,7 +3006,7 @@ class IUIAutomationFocusChangedEventHandler
 ;~ #Include ComImplementationBase.ahk
 ;~ class YourClassName extends IUIAutomationTextEditTextChangedEventHandlerImpl
 ;~ {
-;~	HandleTextEditTextChangedEvent(sender, TextEditChangeType, eventStrings)
+;~	HandleTextEditTextChangedEvent(pInterface, sender, TextEditChangeType, eventStrings)
 ;~	{
 ;~		; your code
 ;~	}
@@ -3021,8 +3017,7 @@ class IUIAutomationFocusChangedEventHandler
 
 
 class IUIAutomationTextEditTextChangedEventHandlerImpl extends IUnknownImpl
-{
-	ComFunctions := ["QueryInterface", "AddRef", "Release", "HandleTextEditTextChangedEvent"]
+{	ComFunctions := ["QueryInterface", "AddRef", "Release", "HandleTextEditTextChangedEvent"]
 
 	__New()
 	{
@@ -3032,12 +3027,12 @@ class IUIAutomationTextEditTextChangedEventHandlerImpl extends IUnknownImpl
 	}
 
 	; VTable Positon 3: INVOKE_FUNC Vt_Hresult HandleTextEditTextChangedEvent([FIN] IUIAutomationElement*: sender, [FIN] TextEditChangeType: TextEditChangeType, [FIN] Safearray: eventStrings)
-	_HandleTextEditTextChangedEvent(sender, TextEditChangeType, eventStrings)
+	_HandleTextEditTextChangedEvent(pInterface, sender, TextEditChangeType, eventStrings)
 	{
 		if (!IsObject(this))
-			return ComObjImpl.ObjMap[this].HandleTextEditTextChangedEvent(sender, TextEditChangeType, eventStrings)
+			return ComObjImpl.ObjMap[this]._HandleTextEditTextChangedEvent(this, pInterface, sender, TextEditChangeType)
 
-		this.HandleTextEditTextChangedEvent(sender, TextEditChangeType, eventStrings)
+		this.HandleTextEditTextChangedEvent(pInterface, sender, TextEditChangeType, eventStrings)
 	}
 }
 
@@ -3103,7 +3098,7 @@ class IUIAutomationTextEditTextChangedEventHandler
 ;~ #Include ComImplementationBase.ahk
 ;~ class YourClassName extends IUIAutomationChangesEventHandlerImpl
 ;~ {
-;~	HandleChangesEvent(sender, uiaChanges, changesCount)
+;~	HandleChangesEvent(pInterface, sender, uiaChanges, changesCount)
 ;~	{
 ;~		; your code
 ;~	}
@@ -3114,8 +3109,7 @@ class IUIAutomationTextEditTextChangedEventHandler
 
 
 class IUIAutomationChangesEventHandlerImpl extends IUnknownImpl
-{
-	ComFunctions := ["QueryInterface", "AddRef", "Release", "HandleChangesEvent"]
+{	ComFunctions := ["QueryInterface", "AddRef", "Release", "HandleChangesEvent"]
 
 	__New()
 	{
@@ -3125,12 +3119,12 @@ class IUIAutomationChangesEventHandlerImpl extends IUnknownImpl
 	}
 
 	; VTable Positon 3: INVOKE_FUNC Vt_Hresult HandleChangesEvent([FIN] IUIAutomationElement*: sender, [FIN] UiaChangeInfo*: uiaChanges, [FIN] Int: changesCount)
-	_HandleChangesEvent(sender, uiaChanges, changesCount)
+	_HandleChangesEvent(pInterface, sender, uiaChanges, changesCount)
 	{
 		if (!IsObject(this))
-			return ComObjImpl.ObjMap[this].HandleChangesEvent(sender, uiaChanges, changesCount)
+			return ComObjImpl.ObjMap[this]._HandleChangesEvent(this, pInterface, sender, uiaChanges)
 
-		this.HandleChangesEvent(sender, uiaChanges, changesCount)
+		this.HandleChangesEvent(pInterface, sender, uiaChanges, changesCount)
 	}
 }
 
@@ -7167,22 +7161,22 @@ class IUIAutomationProxyFactory
 ;~ #Include ComImplementationBase.ahk
 ;~ class YourClassName extends IRawElementProviderSimpleImpl
 ;~ {
-;~	ProviderOptions_PropertyGet()
+;~	ProviderOptions_PropertyGet(pInterface)
 ;~	{
 ;~		; your code
 ;~	}
 
-;~	GetPatternProvider(patternId, byref pRetVal)
+;~	GetPatternProvider(pInterface, patternId, pRetVal)
 ;~	{
 ;~		; your code
 ;~	}
 
-;~	GetPropertyValue(propertyId, byref pRetVal)
+;~	GetPropertyValue(pInterface, propertyId, pRetVal)
 ;~	{
 ;~		; your code
 ;~	}
 
-;~	HostRawElementProvider_PropertyGet()
+;~	HostRawElementProvider_PropertyGet(pInterface)
 ;~	{
 ;~		; your code
 ;~	}
@@ -7193,8 +7187,7 @@ class IUIAutomationProxyFactory
 
 
 class IRawElementProviderSimpleImpl extends IUnknownImpl
-{
-	ComFunctions := ["QueryInterface", "AddRef", "Release", "ProviderOptions_PropertyGet", "GetPatternProvider", "GetPropertyValue", "HostRawElementProvider_PropertyGet"]
+{	ComFunctions := ["QueryInterface", "AddRef", "Release", "ProviderOptions_PropertyGet", "GetPatternProvider", "GetPropertyValue", "HostRawElementProvider_PropertyGet"]
 
 	__New()
 	{
@@ -7203,37 +7196,37 @@ class IRawElementProviderSimpleImpl extends IUnknownImpl
 		base.__New()
 	}
 
-	_ProviderOptions_PropertyGet()	; Type: IRawElementProviderSimple** ObjType: 
+	_ProviderOptions_PropertyGet(pInterface)	; Type: IRawElementProviderSimple** ObjType: 
 	{
 		if (!IsObject(this))
-			return ComObjImpl.ObjMap[this].ProviderOptions_PropertyGet()
-		return this.ProviderOptions_PropertyGet()
+			return ComObjImpl.ObjMap[this]._ProviderOptions_PropertyGet(this, pInterface)
+		return this.ProviderOptions_PropertyGet(pInterface)
 	}
 
 
-	; VTable Positon 4: INVOKE_FUNC Vt_Hresult GetPatternProvider([FIN] Int: pRetVal, [FOUT] [FRETVAL] Unknown*: )
-	_GetPatternProvider(patternId, byref pRetVal)
+	; VTable Positon 4: INVOKE_FUNC Vt_Hresult GetPatternProvider([FIN] Int: patternId, [FOUT] [FRETVAL] Unknown*: pRetVal)
+	_GetPatternProvider(pInterface, patternId, pRetVal)
 	{
 		if (!IsObject(this))
-			return ComObjImpl.ObjMap[this].GetPatternProvider(patternId, byref pRetVal)
+			return ComObjImpl.ObjMap[this]._GetPatternProvider(this, pInterface, patternId)
 
-		this.GetPatternProvider(patternId, byref pRetVal)
+		this.GetPatternProvider(pInterface, patternId, pRetVal)
 	}
 
-	; VTable Positon 5: INVOKE_FUNC Vt_Hresult GetPropertyValue([FIN] Int: pRetVal, [FOUT] [FRETVAL] Variant*: )
-	_GetPropertyValue(propertyId, byref pRetVal)
+	; VTable Positon 5: INVOKE_FUNC Vt_Hresult GetPropertyValue([FIN] Int: propertyId, [FOUT] [FRETVAL] Variant*: pRetVal)
+	_GetPropertyValue(pInterface, propertyId, pRetVal)
 	{
 		if (!IsObject(this))
-			return ComObjImpl.ObjMap[this].GetPropertyValue(propertyId, byref pRetVal)
+			return ComObjImpl.ObjMap[this]._GetPropertyValue(this, pInterface, propertyId)
 
-		this.GetPropertyValue(propertyId, byref pRetVal)
+		this.GetPropertyValue(pInterface, propertyId, pRetVal)
 	}
 
-	_HostRawElementProvider_PropertyGet()	; Type: IRawElementProviderSimple** ObjType: 
+	_HostRawElementProvider_PropertyGet(pInterface)	; Type: IRawElementProviderSimple** ObjType: 
 	{
 		if (!IsObject(this))
-			return ComObjImpl.ObjMap[this].HostRawElementProvider_PropertyGet()
-		return this.HostRawElementProvider_PropertyGet()
+			return ComObjImpl.ObjMap[this]._HostRawElementProvider_PropertyGet(this, pInterface)
+		return this.HostRawElementProvider_PropertyGet(pInterface)
 	}
 
 }

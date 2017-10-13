@@ -35,7 +35,7 @@ class UIA_SnoopWindowsCreated extends IUIAutomationEventHandlerImpl {
 	;	EVENTID 					EventID 	The event identifier.
 	;		@see: https://msdn.microsoft.com/en-us/library/windows/desktop/ee671223(v=vs.85).aspx
 	;
-	HandleAutomationEvent(pSender, EventID) {
+	HandleAutomationEvent(pInterface, pSender, EventID) {
 FileAppend, % "UIA_SnoopWindowsCreated `r`n", output.txt
 		Sender := new IUIAutomationElement(pSender)
 		hWnd := Sender.CurrentNativeWindowHandle
